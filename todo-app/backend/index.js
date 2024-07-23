@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 
 const { connectToMongoDatabase } = require('./db');
+const { todo } = require('./models/todo');
 
 const PORT = 3000;
 
@@ -10,29 +11,40 @@ const { todoSchema, todoIdSchema } = require("./types");
 app.use(express.json());
 
 // GET request to fetch all the existing todos
-app.get("/todos", (req, res) => {
-    res.json({
-        message: "Listing all the existing todos",
-    });
+app.get("/todos", async (req, res) => {
+    try {
+        const todos = await todo.find({});
+        res.json({
+            todos: todos,
+        });
+    } catch (err) {
+        res.json({
+            message: `Failed to fetch todos`,
+            error: `${err.message}`,
+        });
+    }
 });
 
 // POST request to add new todos to the list
-app.post("/todos", (req, res) => {
-    const title = req.body.title;
-    const description = req.body.description;
-
+app.post("/todos", async (req, res) => {
     try {
-        const todoDetails = todoSchema.parse({
+        const title = req.body.title;
+        const description = req.body.description;
+        todoSchema.parse({
             title,
             description,
         });
 
         // Add todo to database and display in the todo list
+        await todo.create({
+            title,
+            description,
+            completed: false
+        });
 
         // Show message to the user
         res.json({
-            message: `Added todo with title ${title} and description
-      ${description}`,
+            message: `Todo Created`,
         });
     } catch (err) {
         res.json({
@@ -43,22 +55,36 @@ app.post("/todos", (req, res) => {
 });
 
 // Update request to update details of an existing todo
-app.put("/todos/:id", (req, res) => {
-    const id = req.params.id;
-    const title = req.body.title;
-    const description = req.body.description;
-
+app.put("/todos/:id", async (req, res) => {
     try {
-        const todoDetails = todoSchema.parse({
+        const id = req.params.id;
+        const title = req.body.title;
+        const description = req.body.description;
+
+        todoIdSchema.parse({
+            id,
+        });
+
+        todoSchema.parse({
             title,
             description,
         });
 
-        const todoIdDetails = todoIdSchema.parse({
-            id,
-        });
-
         // Update todo in the database and display in the todo list
+        if (title != null && description != null) {
+            await todo.findByIdAndUpdate(id, {
+                title,
+                description,
+            });
+        } else if (title != null && description == null) {
+            await todo.findByIdAndUpdate(id, {
+                title
+            });
+        } else if (title == null && description != null) {
+            await todo.findByIdAndUpdate(id, {
+                description
+            });
+        }
 
         // Show message to the user
         res.json({
@@ -73,18 +99,20 @@ app.put("/todos/:id", (req, res) => {
 });
 
 // Update request to update the complete state of an existing todo
-app.put("/todos/:id", (req, res) => {
-    const id = req.params.id;
-
+app.put("/todos/completed/:id", async (req, res) => {
     try {
-        const todoIdDetails = todoIdSchema.parse({
+        const id = req.params.id;
+        todoIdSchema.parse({
             id,
         });
-        // Mark todo from the database as done based on the todo id
 
+        // Mark todo from the database as done based on the todo id
+        await todo.findByIdAndUpdate(id, {
+            completed: true
+        });
         // Show message to the user
         res.json({
-            message: `Completed todo with id ${id}`,
+            message: `Todo with id ${id} marked as completed`,
         });
     } catch (err) {
         res.json({
@@ -95,14 +123,15 @@ app.put("/todos/:id", (req, res) => {
 });
 
 // Delete request to delete a todo from the list
-app.delete("/todos/:id", (req, res) => {
-    const id = req.params.id;
+app.delete("/todos/:id", async (req, res) => {
 
     try {
-        const todoIdDetails = todoIdSchema.parse({
+        const id = req.params.id;
+        todoIdSchema.parse({
             id,
         });
         // Delete todo from the database based on the todo id
+        await todo.findByIdAndDelete(id);
 
         // Show message to the user
         res.json({
