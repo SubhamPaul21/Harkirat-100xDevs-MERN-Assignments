@@ -1,5 +1,8 @@
 const express = require("express");
 const app = express();
+
+const { connectToMongoDatabase } = require('./db');
+
 const PORT = 3000;
 
 const { todoSchema, todoIdSchema } = require("./types");
@@ -39,7 +42,7 @@ app.post("/todos", (req, res) => {
     }
 });
 
-// Update request to update an existing todo
+// Update request to update details of an existing todo
 app.put("/todos/:id", (req, res) => {
     const id = req.params.id;
     const title = req.body.title;
@@ -69,6 +72,28 @@ app.put("/todos/:id", (req, res) => {
     }
 });
 
+// Update request to update the complete state of an existing todo
+app.put("/todos/:id", (req, res) => {
+    const id = req.params.id;
+
+    try {
+        const todoIdDetails = todoIdSchema.parse({
+            id,
+        });
+        // Mark todo from the database as done based on the todo id
+
+        // Show message to the user
+        res.json({
+            message: `Completed todo with id ${id}`,
+        });
+    } catch (err) {
+        res.json({
+            message: `Invalid todo id`,
+            error: `${err.message}`,
+        });
+    }
+});
+
 // Delete request to delete a todo from the list
 app.delete("/todos/:id", (req, res) => {
     const id = req.params.id;
@@ -91,6 +116,12 @@ app.delete("/todos/:id", (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Server is running on port ${PORT}`);
+    const response = await connectToMongoDatabase();
+    if (response == true) {
+        console.log('MongoDB connected...');
+    } else {
+        console.error(response);
+    }
 });
