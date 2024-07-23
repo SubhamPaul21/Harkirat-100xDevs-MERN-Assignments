@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
+require('dotenv').config();
 
 async function connectToMongoDatabase() {
     try {
-        await mongoose.connect('mongodb+srv://singletoncoder:A1IEUefmLZ62LhV1@subhamdb.lqpczmr.mongodb.net/todo-app');
+        await mongoose.connect(process.env.MONGODB_URL);
         return true;
     } catch (err) {
         return err;
