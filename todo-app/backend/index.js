@@ -6,7 +6,7 @@ const { todo } = require('./models/todo');
 
 const PORT = 3000;
 
-const { todoSchema, todoIdSchema } = require("./types");
+const { todoDetailsSchema, todoIdSchema } = require("./types");
 
 app.use(express.json());
 
@@ -30,7 +30,7 @@ app.post("/todos", async (req, res) => {
     try {
         const title = req.body.title;
         const description = req.body.description;
-        todoSchema.parse({
+        todoDetailsSchema.parse({
             title,
             description,
         });
@@ -58,32 +58,27 @@ app.post("/todos", async (req, res) => {
 app.put("/todos/:id", async (req, res) => {
     try {
         const id = req.params.id;
-        const title = req.body.title;
-        const description = req.body.description;
-
         todoIdSchema.parse({
             id,
         });
 
-        todoSchema.parse({
-            title,
-            description,
-        });
+        const existingTodo = await todo.findById(id);
+        if (existingTodo) {
+            const title = req.body.title ? req.body.title : existingTodo.title;
+            const description = req.body.description ? req.body.description : existingTodo.description;
 
-        // Update todo in the database and display in the todo list
-        if (title != null && description != null) {
+            todoDetailsSchema.parse({
+                title,
+                description,
+            });
+
+            // Update todo in the database and display in the todo list
             await todo.findByIdAndUpdate(id, {
                 title,
                 description,
             });
-        } else if (title != null && description == null) {
-            await todo.findByIdAndUpdate(id, {
-                title
-            });
-        } else if (title == null && description != null) {
-            await todo.findByIdAndUpdate(id, {
-                description
-            });
+        } else {
+            throw new Error("Invalid todo id")
         }
 
         // Show message to the user
