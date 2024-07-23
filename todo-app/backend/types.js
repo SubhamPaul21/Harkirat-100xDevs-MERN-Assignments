@@ -1,8 +1,8 @@
 const zod = require('zod');
 
 const todoDetailsSchema = zod.object({
-    title: zod.string().min(3).max(20),
-    description: zod.string().min(5).max(50),
+    title: zod.string().min(5),
+    description: zod.string().min(5),
 });
 
 const todoIdSchema = zod.object({
