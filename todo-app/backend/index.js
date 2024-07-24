@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 
+const cors = require('cors')
+
 const { connectToMongoDatabase } = require('./db');
 const { todo } = require('./models/todo');
 
@@ -9,6 +11,7 @@ const PORT = 3000;
 const { todoDetailsSchema, todoIdSchema } = require("./types");
 
 app.use(express.json());
+app.use(cors());
 
 // GET request to fetch all the existing todos
 app.get("/todos", async (req, res) => {
